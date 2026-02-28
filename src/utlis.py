@@ -3,6 +3,7 @@ import sys
 
 import dill
 from sklearn.metrics import r2_score
+from sklearn.model_selection import GridSearchCV
 
 from src.exception import CustomException
 
@@ -19,21 +20,33 @@ def save_object(file_path, obj):
         raise CustomException(e, sys)
 
 
-def evaluate_models(X_train, X_test, y_train, y_test, models):
+def evaluate_models(X_train, X_test, y_train, y_test, models, param):
     try:
+        if not isinstance(models, dict):
+            raise ValueError("'models' must be a dictionary of model_name -> estimator")
+        if not isinstance(param, dict):
+            raise ValueError("'param' must be a dictionary of model_name -> param_grid")
+
         report = {}
-        model_items = list(models.items())
 
-        for model_name, model in model_items:
-            model.fit(X_train, y_train)
+        for model_name, model in models.items():
+            try:
+                model_param_grid = param.get(model_name, {})
 
-            y_train_pred = model.predict(X_train)
-            y_test_pred = model.predict(X_test)
+                if model_param_grid:
+                    gs = GridSearchCV(model, model_param_grid, cv=3)
+                    gs.fit(X_train, y_train)
+                    best_model = gs.best_estimator_
+                else:
+                    best_model = model
+                    best_model.fit(X_train, y_train)
 
-            train_model_score = r2_score(y_train, y_train_pred)
-            test_model_score = r2_score(y_test, y_test_pred)
+                y_test_pred = best_model.predict(X_test)
+                test_model_score = r2_score(y_test, y_test_pred)
+                report[model_name] = test_model_score
 
-            report[model_name] = test_model_score
+            except Exception as model_error:
+                raise ValueError(f"Model '{model_name}' failed during training/evaluation: {model_error}")
 
         return report
 
