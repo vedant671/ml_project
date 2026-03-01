@@ -34,7 +34,7 @@ def evaluate_models(X_train, X_test, y_train, y_test, models, param):
                 model_param_grid = param.get(model_name, {})
 
                 if model_param_grid:
-                    gs = GridSearchCV(model, model_param_grid, cv=3)
+                    gs = GridSearchCV(model, model_param_grid, cv=3, scoring='r2')
                     gs.fit(X_train, y_train)
                     best_model = gs.best_estimator_
                 else:
@@ -52,3 +52,11 @@ def evaluate_models(X_train, X_test, y_train, y_test, models, param):
 
     except Exception as e:
         raise CustomException(e, sys)
+    
+def load_object(file_path):
+    try:
+        with open(file_path,'rb') as file_obj:
+            return dill.load(file_obj)
+    except Exception as e:
+        raise CustomException(e,sys)
+
