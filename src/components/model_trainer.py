@@ -16,7 +16,7 @@ from xgboost import XGBRegressor
 
 from src.exception import CustomException
 from src.logger import logging
-from src.utlis import evaluate_models, save_object
+from src.utils import evaluate_models, save_object
 
 
 @dataclass
